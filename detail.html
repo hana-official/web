@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detail Produk - HANA STORE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      background: #0b0c10;
+      color: white;
+      font-family: sans-serif;
+    }
+    canvas#stars {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: #0b0c10;
+    }
+    .glow-price {
+      color: #22c55e; /* hijau neon */
+      text-shadow: 0 0 8px rgba(34, 197, 94, 0.7),
+                   0 0 16px rgba(34, 197, 94, 0.5);
+      animation: pulseGlow 2s infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.7),
+                     0 0 16px rgba(34, 197, 94, 0.5);
+      }
+      50% {
+        transform: scale(1.05);
+        text-shadow: 0 0 12px rgba(34, 197, 94, 1),
+                     0 0 24px rgba(34, 197, 94, 0.8);
+      }
+    }
+    /* ===== Perbaikan line break deskripsi ===== */
+    .deskripsi-produk {
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Bintang -->
+  <canvas id="stars"></canvas>
+
+  <!-- Navbar -->
+  <header class="bg-white/10 backdrop-blur-sm shadow fixed w-full z-10">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-indigo-400">HANA STORE</h1>
+      <nav class="flex items-center space-x-6">
+        <a href="index.html" class="hover:text-purple-400 text-indigo-300">Home</a>
+        <a href="produk.html" class="hover:text-purple-400 text-indigo-300">Produk</a>
+        <button id="cart-btn" class="relative">
+          <i data-feather="shopping-cart" class="text-indigo-300"></i>
+          <span id="cart-count" class="absolute -top-2 -right-3 bg-red-500 text-white text-xs px-1.5 rounded-full">0</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Detail Produk -->
+  <section class="container mx-auto px-4 py-28">
+    <div id="detail-produk" class="bg-white/10 backdrop-blur-md rounded-xl p-6 flex flex-col md:flex-row gap-6"></div>
+  </section>
+
+  <!-- Modal Keranjang -->
+  <div id="cart-modal" class="fixed inset-0 hidden bg-black/70 flex items-center justify-center z-50">
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 w-96 text-white shadow-lg">
+      <h3 class="text-xl font-bold mb-4 text-indigo-300">Keranjang Belanja</h3>
+      <ul id="cart-items" class="space-y-3 mb-4 max-h-60 overflow-y-auto"></ul>
+      <div class="flex justify-between items-center">
+        <span class="font-semibold">Total: <span id="cart-total">Rp 0</span></span>
+        <a id="checkout-btn" target="_blank"
+           class="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600">
+          Checkout
+        </a>
+      </div>
+      <button onclick="toggleCart()" class="mt-4 w-full bg-red-500 py-2 rounded-lg hover:bg-red-600">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Pembayaran BESAR -->
+  <div id="payment-modal" class="fixed inset-0 hidden bg-black/70 flex items-center justify-center z-50 overflow-auto">
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 w-11/12 max-w-4xl text-white shadow-lg">
+      <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-center">Pilih Metode Pembayaran</h3>
+      <div class="flex flex-col sm:flex-row sm:justify-center sm:space-x-6 space-y-4 sm:space-y-0">
+        <button onclick="selectPayment('DANA')" class="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-lg text-lg font-semibold w-full sm:w-auto">
+          DANA
+        </button>
+        <button onclick="selectPayment('QRIS')" class="bg-purple-500 hover:bg-purple-600 px-6 py-3 rounded-lg text-lg font-semibold w-full sm:w-auto">
+          QRIS
+        </button>
+      </div>
+
+      <div id="payment-detail" class="mt-6 hidden flex flex-col items-center space-y-4">
+        <!-- QRIS -->
+        <img id="qris-img" src="" alt="QRIS" class="w-64 h-64 object-contain hidden"/>
+        <!-- DANA -->
+        <div id="dana-detail" class="flex flex-col items-center space-y-3 hidden">
+          <p class="text-white/80 text-sm text-center">Silakan transfer menggunakan aplikasi DANA ke nomor berikut:</p>
+          <p id="dana-number" class="text-xl font-bold text-indigo-300">082334835814</p>
+          <p class="text-white/80 text-sm text-center">Atas Nama: FERLY KIKI EFENDI</p>
+          <button onclick="copyDanaNumber()" class="bg-green-500 hover:bg-green-600 px-6 py-2 rounded-lg text-lg font-semibold">
+            Copy Nomor
+          </button>
+        </div>
+        <!-- Tombol konfirmasi WA -->
+        <a id="confirm-btn" href="#" target="_blank" 
+           class="bg-green-500 hover:bg-green-600 px-6 py-3 rounded-lg text-lg font-semibold">
+          Konfirmasi Pembayaran
+        </a>
+      </div>
+
+      <button onclick="togglePayment()" class="mt-6 w-full bg-red-500 py-3 rounded-lg hover:bg-red-600 text-lg font-semibold">Tutup</button>
+    </div>
+  </div>
+
+  <script>
+    // Efek Bintang
+    const canvas = document.getElementById("stars");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let stars = [];
+    for (let i = 0; i < 200; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.2,
+        alpha: Math.random(),
+        dx: (Math.random() - 0.5) * 0.2,
+        dy: (Math.random() - 0.5) * 0.2,
+      });
+    }
+
+    function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "white";
+      stars.forEach((star) => {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${star.alpha})`;
+        ctx.fill();
+
+        star.x += star.dx;
+        star.y += star.dy;
+
+        if (star.x < 0 || star.x > canvas.width) star.dx *= -1;
+        if (star.y < 0 || star.y > canvas.height) star.dy *= -1;
+      });
+    }
+
+    function animateStars() {
+      drawStars();
+      requestAnimationFrame(animateStars);
+    }
+    animateStars();
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Data Produk
+    const produk = [
+      { id: 1, nama: "Sewabot Untuk Grup", harga: 20000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 BULAN\n\nBENEFIT: \n- Masuk grup khusus untuk dapet informasi terbaru\n- Fitur game banyak\n- Fitur rpg banyak\n- Setwelcome dan setleft\n- Antilink all\n- Antilink grup only\n- Store menu\n- Sistem keamanan grup lengkap\n- Brat style, brat teks, dan brat video\n- Nsfw menu\n- Dan masih banyak fitur lainnya"},
+      { id: 2, nama: "Sewabot Untuk Pribadi", harga: 10000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 BULAN\n\nBENEFIT: \n- Masuk grup khusus untuk dapet informasi terbaru\n- Fitur game banyak\n- Fitur rpg banyak\n- Fitur khusus premium banyak\n- Brat style, brat teks, dan brat video\n- Nsfw menu\n- Dan masih banyak fitur lainnya"},
+      { id: 3, nama: "Sewabot Store/Pushkontak", harga: 10000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 BULAN\n\nBENEFIT: \n- Masuk grup khusus untuk dapet informasi terbaru\n- Setwelcome dan setleft\n- Antilink all\n- Antilink grup only\n- Store menu\n- Sistem keamanan grup lengkap\n- Brat style, brat teks, dan brat video\n- Dan masih banyak fitur lainnya"},
+
+      { id: 4, nama: "Jadibot Script MD", harga: 15000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 BULAN\n\nBENEFIT:\n- Masuk grup khusus untuk dapet informasi terbaru\n- Fitur game banyak\n- Fitur rpg banyak\n- Setwelcome dan setleft\n- Antilink all\n- Antilink grup only\n- Store menu\n- Sistem keamanan grup lengkap\n- Brat style, brat teks, dan brat video\n- Nsfw menu\n- Dan masih banyak fitur lainnya"},
+      { id: 5, nama: "Jadibot Script Store/Pushkontak", harga: 10000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 BULAN\n\nBENEFIT:\n- Masuk grup khusus untuk dapet informasi terbaru\n- Setwelcome dan setleft\n- Antilink all\n- Antilink grup only\n- Store menu\n- Sistem keamanan grup lengkap\n- Brat style, brat teks, dan brat video\n- Nsfw menu\n- Dan masih banyak fitur lainnya"},
+
+      { id: 6, nama: "Admin Panel", harga: 15000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 BULAN\n\nBENEFIT:\n- Akses Akun Admin Panel\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)",},
+      { id: 7, nama: "Panel Unlimited Permanen", harga: 35000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: PERMANEN\n\nBENEFIT:\n- Panel Unlimited Permanen\n- Ram : Unlimited\n- Cpu : Unlimited\n- Disk : Unlimited\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)"},
+      { id: 8, nama: "Panel 2GB Ram", harga: 3000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 Bulan\n\nBENEFIT:\n- Ram : 2GB\n- Cpu : 70\n- Disk : 2GB\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)"},
+      { id: 9, nama: "Panel 3GB Ram", harga: 5000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 Bulan\n\nBENEFIT:\n- Ram : 3GB\n- Cpu : 100\n- Disk : 3GB\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)"},
+      { id: 10, nama: "Panel 4GB Ram", harga: 6000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 Bulan\n\nBENEFIT:\n- Ram : 4GB\n- Cpu : 125\n- Disk : 4GB\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)"},
+      { id: 11, nama: "Panel 5GB Ram", harga: 7000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 Bulan\n\nBENEFIT:\n- Ram : 5GB\n- Cpu : 150\n- Disk : 5GB\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)"},
+      { id: 12, nama: "Panel 6GB Ram", harga: 8000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 Bulan\n\nBENEFIT:\n- Ram : 6GB\n- Cpu : 175\n- Disk : 6GB\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)"},
+      { id: 13, nama: "Panel 7GB Ram", harga: 9000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 Bulan\n\nBENEFIT:\n- Ram : 7GB\n- Cpu : 200\n- Disk : 7GB\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)"},
+      { id: 14, nama: "Panel 8GB Ram", harga: 10000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 Bulan\n\nBENEFIT:\n- Ram : 8GB\n- Cpu : 225\n- Disk : 8GB\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)"},
+      { id: 15, nama: "Panel 9GB Ram", harga: 11000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 Bulan\n\nBENEFIT:\n- Ram : 9GB\n- Cpu : 250\n- Disk : 9GB\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)"},
+      { id: 16, nama: "Panel Unlimited Ram", harga: 12000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "EXPIRED: 1 Bulan\n\nBENEFIT:\n- Ram : Unlimited\n- Cpu : Unlimited\n- Disk : Unlimited\n- Ga Boros Kuota\n- Server Masih Aktif Meski Anda Keluar Dari Situs\n- Script Aman (No Culik Sc)"},
+
+      { id: 17, nama: "Script MD Vvip", harga: 40000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "Benefits:\n- Pre-Order Update Versi Terbaru\n- Fitur Langka\n- Dapet Gift Away Tiap Minggu\n- Bisa Nambah Fitur Sesuka Hati\n- Free Update Permanen\n- No Erorr Error 95% | 5% pake apikey\n- Private Fitur\n- Fast Respons\n- No Delay\n- Pairing Code\n- Bisa Request 1x Saat Pembelian Pertama\n- Free Apikey Tanpa Beli/No Apikey\n- Terdapat Error Langsung Fix 10x/Minggu\n- Fitur Premium Setiap Update Ada Fitur Langka Dan Tidak Pasaran\n- No Kunci/Enc Script\n- Bebas Ubah Sampe Akar\n- Privasi Di Jamin Aman\n\nLainnya:\n- Jaga Group\n- Jaga Owner\n- Downloader Sosmed\n- Buat Sticker All\n- Pencarian\n- Belajar\n- Masi Banyak Lagi Fitur Lainya\n- Total Fitur 1700+ Fitur Lengkap Tinggal Pake"},
+      { id: 18, nama: "Script MD Premium", harga: 20000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "Benefits:\n- Pre-Order Update Versi Terbaru\n- Dapet Gift Away Tiap Minggu\n- Bisa Nambah Fitur Sesuka Hati\n- Free Update Permanen\n- No Erorr Error 95% | 5% pake apikey\n- Private Fitur\n- Fast Respons\n- No Delay\n- Pairing Code\n- Bisa Request 1x Saat Pembelian Pertama\n- Free Apikey Tanpa Beli/No Apikey\n- Terdapat Error Langsung Fix 10x/Minggu\n- Fitur Premium Setiap Update Ada Fitur Langka Dan Tidak Pasaran\n- No Kunci/Enc Script\n- Bebas Ubah Sampe Akar\n\nLainnya:\n- Jaga Group\n- Downloader Sosmed\n- Buat Sticker All\n- Pencarian\n- Belajar\n- Masi Banyak Lagi Fitur Lainya\n- Total Fitur 1500+ Fitur Lengkap Tinggal Pake"},
+      { id: 19, nama: "Script MD Store/Pushkontak", harga: 20000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "Benefits:\n- Pre-Order Update Versi Terbaru\n- Fitur Langka\n- Dapet Gift Away Tiap Minggu\n- Bisa Nambah Fitur Sesuka Hati\n- Free Update Permanen\n- No Erorr Error 95% | 5% pake apikey\n- Private Fitur\n- Fast Respons\n- No Delay\n- Pairing Code\n- Bisa Request 1x Saat Pembelian Pertama\n- Free Apikey Tanpa Beli/No Apikey\n- Terdapat Error Langsung Fix 10x/Minggu\n- Fitur Premium Setiap Update Ada Fitur Langka Dan Tidak Pasaran\n- No Kunci/Enc Script\n- Bebas Ubah Sampe Akar\n- Privasi Di Jamin Aman\n\nLainnya:\n- Jaga Group\n- Jaga Owner\n- Downloader Sosmed\n- Buat Sticker All\n- Belajar\n- Masi Banyak Lagi Fitur Lainya"},
+
+      { id: 20, nama: "Reseller Script MD Vvip", harga: 40000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "Benefits:\n - Harga Tersebut Jika Anda Sudah Punya Scriptnya\n - Harga Jual Script Bebas Atur Sendiri\n - Modal Kecil, Untung Besar\n - Tanpa Stok & Bebas Risiko\n - Harga Reseller Spesial\n - Free Update Script\n - Support & Panduan Lengkap\n - Pasif Income Berkelanjutan"},
+      { id: 21, nama: "Reseller Script MD Premium", harga: 20000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "Benefits:\n - Harga Tersebut Jika Anda Sudah Punya Scriptnya\n - Harga Jual Script Bebas Atur Sendiri\n - Modal Kecil, Untung Besar\n - Tanpa Stok & Bebas Risiko\n - Harga Reseller Spesial\n - Free Update Script\n - Support & Panduan Lengkap\n - Pasif Income Berkelanjutan"},
+      { id: 22, nama: "Reseller Script MD Store/Pushkontak", harga: 20000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "Benefits:\n - Harga Tersebut Jika Anda Sudah Punya Scriptnya\n - Harga Jual Script Bebas Atur Sendiri\n - Modal Kecil, Untung Besar\n - Tanpa Stok & Bebas Risiko\n - Harga Reseller Spesial\n - Free Update Script\n - Support & Panduan Lengkap\n - Pasif Income Berkelanjutanp"},
+
+      { id: 23, nama: "Vps Ram 16GB Core 8", harga: 70000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "BENEFIT BUY VPS:\n - FREE INSTALL VPS\n - FREE REQUEST DOMAIN\n - VPS READY TO USE\n - FREE PILIH NEST\n - GARANSI 20 DAY\n - VPS AKTIF 1-2 BULAN\n - BISA OPEN RESELLER, ADP, PT PANEL, OWNER PANELL\n - DAN LAIN-LAIN"},
+      { id: 24, nama: "Vps Ram 8GB Core 4", harga: 50000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "BENEFIT BUY VPS:\n - FREE INSTALL VPS\n - FREE REQUEST DOMAIN\n - VPS READY TO USE\n - FREE PILIH NEST\n - GARANSI 20 DAY\n - VPS AKTIF 1-2 BULAN\n - BISA OPEN RESELLER, ADP, PT PANEL, OWNER PANELL\n - DAN LAIN-LAIN"},
+      { id: 25, nama: "Vps Ram 4GB Core 2", harga: 40000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "BENEFIT BUY VPS:\n - FREE INSTALL VPS\n - FREE REQUEST DOMAIN\n - VPS READY TO USE\n - FREE PILIH NEST\n - GARANSI 20 DAY\n - VPS AKTIF 1-2 BULAN\n - BISA OPEN RESELLER, ADP, PT PANEL, OWNER PANELL\n - DAN LAIN-LAIN"},
+      { id: 26, nama: "Vps Ram 2GB Core 1", harga: 25000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "BENEFIT BUY VPS:\n - FREE INSTALL VPS\n - FREE REQUEST DOMAIN\n - VPS READY TO USE\n - FREE PILIH NEST\n - GARANSI 20 DAY\n - VPS AKTIF 1-2 BULAN\n - BISA OPEN RESELLER, ADP, PT PANEL, OWNER PANELL\n - DAN LAIN-LAIN"},
+
+      { id: 27, nama: "Nokos 3x Verif", harga: 7000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "GARANSI 3X VERIF ULANG"},
+      { id: 28, nama: "Nokos Unlimited Verif", harga: 10000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "GARANSI UNLIMITED VERIF ULANG"},
+
+      { id: 29, nama: "My.id Domain", harga: 15000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "Namakamu.my.id\n\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 15.000\n\nINCLUDE:\n- Email Dan Passwordnya\n- Akun Domain Aktif 1 Tahun\n- Akun Cloudflare\n- Terima Jadi Tinggal Pakai\n\n- Free Sambungin Cloudflare Aktif 1 Tahun"},
+      { id: 30, nama: "Biz.id Domain", harga: 15000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "Namakamu.biz.id\n\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 15.000\n\nINCLUDE:\n- Email Dan Passwordnya\n- Akun Domain Aktif 1 Tahun\n- Akun Cloudflare\n- Terima Jadi Tinggal Pakai\n\n- Free Sambungin Cloudflare Aktif 1 Tahun"},
+
+      { id: 31, nama: "Fix error Sc Bot", harga: 1000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "Benefits:\n- Bebas Request Fitur Sesuai Keinginan\n- Dapet Gift Away Tiap Minggu\n- Bisa Nambah Fitur Sesuka Hati\n- Free Revisi\n- No Erorr Error 100%\n- No Kunci/Enc Script\n- Bebas Ubah Sampe Akar\n- Privasi Di Jamin Aman\n- Diproses Sampe Jadi Sesuai Keinginan"},
+      { id: 32, nama: "Add Fitur Bot", harga: 1000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "Benefits:\n- Bebas Request Fitur Sesuai Keinginan\n- Dapet Gift Away Tiap Minggu\n- Bisa Nambah Fitur Sesuka Hati\n- Free Revisi\n- No Erorr Error 100%\n- No Kunci/Enc Script\n- Bebas Ubah Sampe Akar\n- Privasi Di Jamin Aman\n- Diproses Sampe Jadi Sesuai Keinginan"},
+
+      { id: 33, nama: "Call of Duty Mobile", harga: 1000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "SILAHKAN CHECKOUT SESUAI HARGA YANG TERTERA\nLIST HARGA DIAMONDS CALL OFF DUTY MOBILE\n\n📡 63 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 10.000\n\n📡 128 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 19.000\n\n📡 321 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 47.000\n\n📡 645 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 91.000\n\n📡 800 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 110.000\n\n📡 1373 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 180.000\n\n📡 2060 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 270.500\n\nKEUNTUNGAN:\n- Proses Cepat\n- Harga Dijamin Murah\n- Pengisian Lewat ID Bukan Login\n- Ada Bonus Untuk Buyer Langganan"},
+      { id: 34, nama: "Free Fire", harga: 1000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "SILAHKAN CHECKOUT SESUAI HARGA YANG TERTERA\nLIST HARGA DIAMONDS FREE FIRE\n\n📡 5 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 1.000\n\n📡 10 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 2.000\n\n📡 20 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 4.000\n\n📡 50 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 8.000\n\n📡 70 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 11.000\n\n📡 100 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 15.000\n\n📡 120 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 17.500\n\n📡 140 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 19.500\n\n📡 180 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 24.500\n\n📡 210 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 27.500\n\n📡 250 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 33.000\n\n📡 300 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 39.000\n\n📡 350 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 44.000\n\n📡 400 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 50.000\n\n📡 440 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 54.500\n\n📡 500 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 61.000\n\n📡 545 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 66.500\n\n📡 600 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 74.000\n\n📡 655 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 80.000\n\n📡 700 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 86.000\n\n📡 800 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 95.000\n\n📡 930 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 112.000\n\n📡 1000 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 120.000\n\n📡 MEMBERSHIP MINGGUAN\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 28.000\n\n📡 MEMBERSHIP BULANAN\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 80.000\n\nKEUNTUNGAN:\n- Proses Cepat\n- Harga Dijamin Murah\n- Pengisian Lewat ID Bukan Login\n- Ada Bonus Untuk Buyer Langganan"},
+      { id: 35, nama: "Free Fire Max", harga: 1000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "SILAHKAN CHECKOUT SESUAI HARGA YANG TERTERA\nLIST HARGA DIAMONDS FREE FIRE\n\n📡 5 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 1.000\n\n📡 10 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 2.000\n\n📡 20 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 4.000\n\n📡 50 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 8.000\n\n📡 70 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 11.000\n\n📡 100 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 15.000\n\n📡 120 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 17.500\n\n📡 140 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 19.500\n\n📡 180 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 24.500\n\n📡 210 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 27.500\n\n📡 250 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 33.000\n\n📡 300 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 39.000\n\n📡 350 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 44.000\n\n📡 400 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 50.000\n\n📡 440 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 54.500\n\n📡 500 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 61.000\n\n📡 545 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 66.500\n\n📡 600 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 74.000\n\n📡 655 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 80.000\n\n📡 700 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 86.000\n\n📡 800 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 95.000\n\n📡 930 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 112.000\n\n📡 1000 DIAMONDS\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 120.000\n\n📡 MEMBERSHIP MINGGUAN\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 28.000\n\n📡 MEMBERSHIP BULANAN\n⤷ ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 80.000\n\nKEUNTUNGAN:\n- Proses Cepat\n- Harga Dijamin Murah\n- Pengisian Lewat ID Bukan Login\n- Ada Bonus Untuk Buyer Langganan"},
+      { id: 36, nama: "Genshin impact", harga: 1000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "SILAHKAN CHECKOUT SESUAI HARGA YANG TERTERA\nLIST HARGA DIAMONDS GENSHIN IMPACT\n\n📡 60 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 13.000\n\n📡 330 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 60.000\n\n📡 1090 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 175.000\n\n📡 1280 + 140 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 235.000\n\n📡 BLESSING WELKIN MOON\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 59.000\n\n📡 BLESSING WELKIN MOON X2\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 118.000\n\n📡 BLESSING WELKIN MOON X3\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 175.000\n\nKEUNTUNGAN:\n- Proses Cepat\n- Harga Dijamin Murah\n- Pengisian Lewat ID Bukan Login\n- Ada Bonus Untuk Buyer Langganan"},
+      { id: 37, nama: "Honor of Kings", harga: 1000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "SILAHKAN CHECKOUT SESUAI HARGA YANG TERTERA\nLIST HARGA DIAMONDS HONOR OF KINGS\n\n📡 16 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 4.000\n\n📡 80 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 16.000\n\n📡 240 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 44.000\n\n📡 400 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 73.000\n\n📡 560 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 100.000\n\n📡 800 + 30 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 143.000\n\n📡 1200 + 45 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 215.000\n\nKEUNTUNGAN:\n- Proses Cepat\n- Harga Dijamin Murah\n- Pengisian Lewat ID Bukan Login\n- Ada Bonus Untuk Buyer Langganan"},
+      { id: 38, nama: "Mobile Legends", harga: 1000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "SILAHKAN CHECKOUT SESUAI HARGA YANG TERTERA\nLIST HARGA DIAMONDS MOBILE LEGENDS\n\n📡 5 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 2.000\n\n📡 28 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 10.000\n\n📡 50 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 16.000\n\n📡 85 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 24.000\n\n📡 170 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 47.000\n\n📡 229 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 62.000\n\n📡 240 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 65.000\n\n📡 284 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 75.000\n\n📡 345 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 92.000\n\n📡 374 DIAMONDS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 100.000\n\n📡 1X WEEKLY PASS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 30.500\n\n📡 2X WEEKLY PASS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 58.000\n\n📡 3X WEEKLY PASS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 85.000\n\n📡 4X WEEKLY PASS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 114.000\n\n📡 5X WEEKLY PASS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 143.000\n\nKEUNTUNGAN:\n- Proses Cepat\n- Harga Dijamin Murah\n- Pengisian Lewat ID Bukan Login\n- Ada Bonus Untuk Buyer Langganan"},
+      { id: 39, nama: "PUBG Mobile", harga: 1000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "SILAHKAN CHECKOUT SESUAI HARGA YANG TERTERA\nLIST HARGA DIAMONDS PUBG MOBILE\n\n📡 PUBG 60 UC\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 18.000\n\n📡 PUBG 120 UC\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 31.000\n\n📡 PUBG 325 UC\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 73.000\n\n📡 PUBG 385 UC\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 87.000\n\n📡 PUBG 660 UC\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 145.000\n\n📡 PUBG 780 UC\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 72.000\n\n📡 PUBG 1800 UC\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 360.000\n\n📡 PUBG 2460 UC\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 500.000\n\nKEUNTUNGAN:\n- Proses Cepat\n- Harga Dijamin Murah\n- Pengisian Lewat ID Bukan Login\n- Ada Bonus Untuk Buyer Langganan"},
+      { id: 40, nama: "Valorant", harga: 1000, img: "https://i.imgur.com/e1KSSZM.jpeg", deskripsi: "SILAHKAN CHECKOUT SESUAI HARGA YANG TERTERA\nLIST HARGA DIAMONDS VALORANT\n\n📡 475 POINTS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 55.000\n\n📡 1000 POINTS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 107.000\n\n📡 2050 POINTS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 213.000\n\n📡 3650 POINTS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 365.000\n\n📡 5350 POINTS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 525.000\n\n📡 11000 POINTS\n- ᴅᴇɴɢᴀɴ ʜᴀʀɢᴀ 1.050.000\n\nKEUNTUNGAN:\n- Proses Cepat\n- Harga Dijamin Murah\n- Pengisian Lewat ID Bukan Login\n- Ada Bonus Untuk Buyer Langganan"}
+    ];
+
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const cartCount = document.getElementById("cart-count");
+    const cartItems = document.getElementById("cart-items");
+    const cartTotal = document.getElementById("cart-total");
+    const checkoutBtn = document.getElementById("checkout-btn");
+
+    // Ambil id produk dari URL
+    const params = new URLSearchParams(window.location.search);
+    const id = parseInt(params.get("id"));
+    const item = produk.find(p => p.id === id);
+
+    if (item) {
+      const detail = document.getElementById("detail-produk");
+      detail.innerHTML = `
+        <img src="${item.img}" class="w-full md:w-1/3 h-64 object-cover rounded-lg">
+        <div class="flex-1">
+          <h2 class="text-2xl font-bold text-indigo-300 mb-1">${item.nama}</h2>
+          <p class="text-2xl font-extrabold glow-price mb-3">Rp ${item.harga.toLocaleString()}</p>
+          <p class="text-gray-300 mb-4 deskripsi-produk">${item.deskripsi}</p>
+          <button onclick="addToCart(${item.id})" 
+            class="bg-purple-500 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-600 transition">
+            + Keranjang
+          </button>
+        </div>
+      `;
+    }
+
+    function addToCart(id) {
+      const item = produk.find(p => p.id === id);
+      const existing = cart.find(p => p.id === id);
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({ ...item, qty: 1 });
+      }
+      saveCart();
+      updateCart();
+    }
+
+    function changeQty(id, delta) {
+      const item = cart.find(p => p.id === id);
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) {
+        cart = cart.filter(p => p.id !== id);
+      }
+      saveCart();
+      updateCart();
+    }
+
+    function updateCart() {
+      cartCount.textContent = cart.reduce((a, b) => a + b.qty, 0);
+      cartItems.innerHTML = "";
+      let total = 0;
+      let pesan = "Halo, saya mau order produk berikut:%0A";
+
+      cart.forEach((item, index) => {
+        const subTotal = item.harga * item.qty;
+        total += subTotal;
+        pesan += `%0A${index+1}. ${item.nama} x${item.qty} - Rp ${subTotal.toLocaleString()}`;
+        const li = document.createElement("li");
+        li.className = "flex justify-between items-center bg-white/5 p-2 rounded text-sm";
+        li.innerHTML = `
+          <span>${item.nama}</span>
+          <div class="flex items-center space-x-2">
+            <button onclick="changeQty(${item.id}, -1)" class="bg-red-500 px-2 rounded">-</button>
+            <span>${item.qty}</span>
+            <button onclick="changeQty(${item.id}, 1)" class="bg-green-500 px-2 rounded">+</button>
+          </div>
+          <span>Rp ${subTotal.toLocaleString()}</span>
+        `;
+        cartItems.appendChild(li);
+      });
+
+      cartTotal.textContent = "Rp " + total.toLocaleString();
+      pesan += `%0A%0ATotal: Rp ${total.toLocaleString()}`;
+      checkoutBtn.href = `https://wa.me/6282334835814?text=${pesan}`;
+    }
+
+    function saveCart() {
+      localStorage.setItem("cart", JSON.stringify(cart));
+    }
+
+    function toggleCart() {
+      document.getElementById("cart-modal").classList.toggle("hidden");
+    }
+
+    document.getElementById("cart-btn").addEventListener("click", toggleCart);
+
+    updateCart();
+    feather.replace();
+
+/* ===== Modal Pembayaran ===== */
+    const paymentModal = document.getElementById("payment-modal");
+    const qrisImgEl = document.getElementById("qris-img");
+    const danaDetail = document.getElementById("dana-detail");
+    const danaNumber = document.getElementById("dana-number");
+    const confirmBtnEl = document.getElementById("confirm-btn");
+
+    const paymentLinks = {
+      "DANA": "",
+      "QRIS": "https://i.imgur.com/a7UioF9.jpeg"
+    };
+
+    function togglePayment() { paymentModal.classList.toggle("hidden"); }
+
+    function selectPayment(method) {
+      if(method==="QRIS") { 
+        qrisImgEl.src = paymentLinks.QRIS;
+        qrisImgEl.classList.remove("hidden");
+        danaDetail.classList.add("hidden");
+      } else { 
+        qrisImgEl.classList.add("hidden");
+        danaDetail.classList.remove("hidden");
+      }
+
+      let pesan = `Harap sertakan ss bukti, pembayaran menggunakan ${method}:%0A`;
+      cart.forEach((item,index)=>{
+        const subTotal = item.harga * item.qty;
+        pesan += `%0A${index+1}. ${item.nama} x${item.qty} - Rp ${subTotal.toLocaleString()}`;
+      });
+      const total = cart.reduce((a,b)=>a+b.harga*b.qty,0);
+      pesan += `%0A%0ATotal: Rp ${total.toLocaleString()}`;
+      confirmBtnEl.href = `https://wa.me/6282334835814?text=${pesan}`;
+      document.getElementById("payment-detail").classList.remove("hidden");
+    }
+
+    function copyDanaNumber() {
+      navigator.clipboard.writeText(danaNumber.textContent)
+        .then(()=>alert("Nomor DANA berhasil disalin!"))
+        .catch(()=>alert("Gagal menyalin nomor DANA."));
+    }
+
+    checkoutBtn.addEventListener("click",(e)=>{
+      e.preventDefault();
+      togglePayment();
+    });
+
+  </script>
+</body>
+</html>

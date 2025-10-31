@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TENTANG HANA STORE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      color: white;
+      overflow-x: hidden;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    .sky {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: radial-gradient(ellipse at bottom, #0d1b2a 0%, #000 100%);
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.8;
+      animation: twinkle 2s infinite ease-in-out alternate;
+    }
+    @keyframes twinkle { from { opacity: 0.3; } to { opacity: 1; } }
+
+    .moon {
+      position: absolute;
+      top: 80px;
+      right: 120px;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle at 30% 30%, #fff, #ccc 70%);
+      border-radius: 50%;
+      box-shadow: 0 0 40px 15px rgba(255, 255, 200, 0.5);
+    }
+
+    .shooting-star {
+      position: absolute;
+      width: 150px;
+      height: 2px;
+      background: linear-gradient(90deg, white, transparent);
+      opacity: 0.8;
+      transform: rotate(-45deg);
+      animation: shooting 1.5s linear forwards;
+    }
+    @keyframes shooting {
+      from { transform: translateX(0) translateY(0) rotate(-45deg); opacity: 1; }
+      to { transform: translateX(-700px) translateY(350px) rotate(-45deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Background -->
+  <div class="sky">
+    <div class="moon"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-white/10 backdrop-blur-sm shadow fixed w-full z-20">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-indigo-400">HANA STORE</h1>
+      <nav>
+        <a href="index.html" class="mx-3 hover:text-purple-400 text-indigo-300">Home</a>
+        <a href="produk.html" class="mx-3 hover:text-purple-400 text-indigo-300">Produk</a>
+        <a href="dukungan.html" class="mx-3 hover:text-purple-400 text-indigo-300">Donasi</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="flex-grow container mx-auto px-4 pt-32"> <!-- ✅ ganti py-32 jadi pt-32, hapus z-10 -->
+
+    <!-- Tombol -->
+    <section class="card max-w-2xl mx-auto mb-12" id="kontak">
+      <h3 class="text-2xl font-bold text-indigo-400 mb-6">Hubungi Kami</h3>
+      <div class="grid gap-4">
+
+        <!-- Testimoni -->
+        <a href="https://www.whatsapp.com/channel/0029Vaow9Tm0wak2CV6acV1s"
+           target="_blank"
+           class="bg-purple-500 px-6 py-3 rounded-lg font-semibold shadow hover:bg-purple-600 text-center">
+          TESTIMONI
+        </a> 
+
+        <!-- Grup WA -->
+        <a href="https://chat.whatsapp.com/FPApwM2pxS73rFwNhBWcC3"
+           target="_blank"
+           class="bg-green-500 px-6 py-3 rounded-lg font-semibold shadow hover:bg-green-600 text-center">
+          Grup WhatsApp 1
+        </a>
+        <a href="https://chat.whatsapp.com/DDcYpiEPiDiGbSjvULR5TX"
+           target="_blank"
+           class="bg-green-500 px-6 py-3 rounded-lg font-semibold shadow hover:bg-green-600 text-center">
+          Grup WhatsApp 2
+        </a>
+        <a href="https://chat.whatsapp.com/Fvxq9RtHpmjENVAz8NL9yt"
+           target="_blank"
+           class="bg-green-500 px-6 py-3 rounded-lg font-semibold shadow hover:bg-green-600 text-center">
+          Grup WhatsApp 3
+        </a>
+
+        <!-- Customer Service -->
+        <a href="https://wa.me/6282334835814?text=Halo%20Admin,%20saya%20butuh%20bantuan%20customer%20service"
+           target="_blank"
+           class="bg-indigo-500 px-6 py-3 rounded-lg font-semibold shadow hover:bg-indigo-600 text-center">
+          Chat Customer Service
+        </a>
+      </div>
+    </section>
+
+    <!-- Jam Operasional -->
+    <section class="card max-w-2xl mx-auto mb-12" id="jam">
+      <h3 class="text-2xl font-bold text-indigo-400 mb-4">Jam Operasional</h3>
+      <p class="text-gray-300">Senin: <span class="font-semibold">Buka 25 Jam</span></p>
+      <p class="text-gray-300">Selasa: <span class="font-semibold">Buka 25 Jam</span></p>
+      <p class="text-gray-300">Rabu: <span class="font-semibold">Buka 25 Jam</span></p>
+      <p class="text-gray-300">Kamis: <span class="font-semibold">Buka 25 Jam</span></p>
+      <p class="text-gray-300">Jumat: <span class="font-semibold">Buka 24 Jam</span></p>
+      <p class="text-gray-300">Sabtu: <span class="font-semibold">Buka 25 Jam</span></p>
+      <p class="text-gray-300">Minggu: <span class="font-semibold">Buka 25 Jam</span></p>
+    </section>
+
+    <!-- Tentang Toko -->
+    <section class="card max-w-2xl mx-auto mb-12" id="tentang">
+      <h2 class="text-3xl font-bold text-indigo-400 mb-4">TENTANG HANA STORE</h2>
+      <p class="text-gray-300 leading-relaxed">
+        HANA STORE adalah toko online yang menyediakan berbagai kebutuhan digital dan produk pilihan.
+        Kami berkomitmen untuk memberikan layanan terbaik, harga terjangkau, dan pelayanan ramah
+        untuk semua pelanggan kami.
+      </p>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-black/70 py-6 text-center text-gray-400 relative z-10">
+    <p>&copy; 2025 HANA STORE. All rights reserved.</p>
+  </footer>
+
+  <!-- Script Bintang + Meteor -->
+  <script>
+    const sky = document.querySelector(".sky");
+    for (let i = 0; i < 150; i++) {
+      const star = document.createElement("div");
+      star.className = "star";
+      star.style.top = Math.random() * window.innerHeight + "px";
+      star.style.left = Math.random() * window.innerWidth + "px";
+      sky.appendChild(star);
+    }
+    function createMeteor() {
+      const shooting = document.createElement("div");
+      shooting.className = "shooting-star";
+      shooting.style.top = Math.random() * 200 + "px";
+      shooting.style.left = window.innerWidth - 50 + "px";
+      sky.appendChild(shooting);
+      setTimeout(() => shooting.remove(), 1500);
+    }
+    setInterval(() => {
+      const count = Math.random() > 0.7 ? 3 : 1;
+      for (let i = 0; i < count; i++) {
+        setTimeout(createMeteor, i * 200);
+      }
+    }, 4000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Katalog Produk - HANA STORE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      background: #0b0c10; /* langit malam */
+      color: white;
+      font-family: sans-serif;
+    }
+    canvas#stars {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: #0b0c10;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Bintang -->
+  <canvas id="stars"></canvas>
+
+  <!-- Navbar -->
+  <header class="bg-white/10 backdrop-blur-sm shadow fixed w-full z-10">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-indigo-400">HANA STORE</h1>
+      <nav class="flex items-center space-x-6">
+        <a href="index.html" class="hover:text-purple-400 text-indigo-300">Home</a>
+        <a href="dukungan.html" class="hover:text-purple-400 text-indigo-300 font-semibold">Donate</a>
+        <button id="cart-btn" class="relative">
+          <i data-feather="shopping-cart" class="text-indigo-300"></i>
+          <span id="cart-count" class="absolute -top-2 -right-3 bg-red-500 text-white text-xs px-1.5 rounded-full">0</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Katalog Produk -->
+  <section class="container mx-auto px-4 py-28">
+    <h2 class="text-3xl font-bold text-center mb-12 text-indigo-400">Katalog Produk</h2>
+    <div id="produk-list"></div>
+  </section>
+
+  <!-- Modal Keranjang -->
+  <div id="cart-modal" class="fixed inset-0 hidden bg-black/70 flex items-center justify-center z-50">
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 w-96 text-white shadow-lg">
+      <h3 class="text-xl font-bold mb-4 text-indigo-300">Keranjang Belanja</h3>
+      <ul id="cart-items" class="space-y-3 mb-4 max-h-60 overflow-y-auto"></ul>
+      <div class="flex justify-between items-center">
+        <span class="font-semibold">Total: <span id="cart-total">Rp 0</span></span>
+        <a id="checkout-btn" href="#" 
+           class="bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600">
+          Checkout
+        </a>
+      </div>
+      <button onclick="toggleCart()" class="mt-4 w-full bg-red-500 py-2 rounded-lg hover:bg-red-600">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Pembayaran BESAR -->
+  <div id="payment-modal" class="fixed inset-0 hidden bg-black/70 flex items-center justify-center z-50 overflow-auto">
+    <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 w-11/12 max-w-4xl text-white shadow-lg">
+      <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-center">Pilih Metode Pembayaran</h3>
+      <div class="flex flex-col sm:flex-row sm:justify-center sm:space-x-6 space-y-4 sm:space-y-0">
+        <button onclick="selectPayment('DANA')" class="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-lg text-lg font-semibold w-full sm:w-auto">
+          DANA
+        </button>
+        <button onclick="selectPayment('QRIS')" class="bg-purple-500 hover:bg-purple-600 px-6 py-3 rounded-lg text-lg font-semibold w-full sm:w-auto">
+          QRIS
+        </button>
+      </div>
+      <div id="payment-detail" class="mt-6 hidden flex flex-col items-center space-y-4">
+        <!-- QRIS -->
+        <img id="qris-img" src="" alt="QRIS" class="w-64 h-64 object-contain hidden"/>
+        <!-- DANA -->
+        <div id="dana-detail" class="flex flex-col items-center space-y-3 hidden">
+          <p class="text-white/80 text-sm text-center">Silakan transfer menggunakan aplikasi DANA ke nomor berikut:</p>
+          <p id="dana-number" class="text-xl font-bold text-indigo-300">082334835814</p>
+          <p class="text-white/80 text-sm text-center">Atas Nama: FERLY KIKI EFENDI</p>
+          <button onclick="copyDanaNumber()" class="bg-green-500 hover:bg-green-600 px-6 py-2 rounded-lg text-lg font-semibold">
+            Copy Nomor
+          </button>
+        </div>
+        <!-- Tombol konfirmasi WA -->
+        <a id="confirm-btn" href="#" target="_blank" 
+           class="bg-green-500 hover:bg-green-600 px-6 py-3 rounded-lg text-lg font-semibold">
+          Konfirmasi Pembayaran
+        </a>
+      </div>
+      <button onclick="togglePayment()" class="mt-6 w-full bg-red-500 py-3 rounded-lg hover:bg-red-600 text-lg font-semibold">Tutup</button>
+    </div>
+  </div>
+  <script>
+
+    /* ===== Efek Bintang ===== */
+    const canvas = document.getElementById("stars");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let stars = [];
+    for (let i = 0; i < 200; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.2,
+        alpha: Math.random(),
+        dx: (Math.random() - 0.5) * 0.2,
+        dy: (Math.random() - 0.5) * 0.2,
+      });
+    }
+    function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach((star) => {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${star.alpha})`;
+        ctx.fill();
+        star.x += star.dx;
+        star.y += star.dy;
+        if (star.x < 0 || star.x > canvas.width) star.dx *= -1;
+        if (star.y < 0 || star.y > canvas.height) star.dy *= -1;
+      });
+    }
+    function animateStars() { drawStars(); requestAnimationFrame(animateStars); }
+    animateStars();
+    window.addEventListener("resize", () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+    /* ===== Data Produk ===== */
+    const produk = [
+      { id: 1, nama: "Sewabot Untuk Grup", harga: 20000, img: "https://i.imgur.com/CU6HjD7.jpeg", deskripsi: "Panel WhatsApp bot premium dengan performa tinggi.", kategori: "SEWABOT" },
+      { id: 2, nama: "Sewabot Untuk Pribadi", harga: 10000, img: "https://i.imgur.com/CU6HjD7.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "SEWABOT" },
+      { id: 3, nama: "Sewabot Store/Pushkontak", harga: 10000, img: "https://i.imgur.com/CU6HjD7.jpeg", deskripsi: "Panel WhatsApp bot premium dengan performa tinggi.", kategori: "SEWABOT" },
+      { id: 4, nama: "Jadibot Script MD", harga: 15000, img: "https://i.imgur.com/jUg0uKt.jpeg", deskripsi: "Script WhatsApp bot dengan fitur lengkap siap pakai.", kategori: "JADIBOT" },
+      { id: 5, nama: "Jadibot Script Store/Pushkontak", harga: 10000, img: "https://i.imgur.com/jUg0uKt.jpeg", deskripsi: "Panel WhatsApp bot premium dengan performa tinggi.", kategori: "JADIBOT" },
+      { id: 6, nama: "Admin Panel", harga: 15000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "PANEL" },
+      { id: 7, nama: "Panel Unlimited Permanen", harga: 35000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Panel WhatsApp bot premium dengan performa tinggi.", kategori: "PANEL" },
+      { id: 8, nama: "Panel 2GB Ram", harga: 3000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Script WhatsApp bot dengan fitur lengkap siap pakai.", kategori: "PANEL" },
+      { id: 9, nama: "Panel 3GB Ram", harga: 5000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Panel WhatsApp bot premium dengan performa tinggi.", kategori: "PANEL" },
+      { id: 10, nama: "Panel 4GB Ram", harga: 6000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "PANEL" },
+      { id: 11, nama: "Panel 5GB Ram", harga: 7000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Script WhatsApp bot dengan fitur lengkap siap pakai.", kategori: "PANEL" },
+      { id: 12, nama: "Panel 6GB Ram", harga: 8000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "PANEL" },
+      { id: 13, nama: "Panel 7GB Ram", harga: 9000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Panel WhatsApp bot premium dengan performa tinggi.", kategori: "PANEL" },
+      { id: 14, nama: "Panel 8GB Ram", harga: 10000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Script WhatsApp bot dengan fitur lengkap siap pakai.", kategori: "PANEL" },
+      { id: 15, nama: "Panel 9GB Ram", harga: 11000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Panel WhatsApp bot premium dengan performa tinggi.", kategori: "PANEL" },
+      { id: 16, nama: "Panel Unlimited Ram", harga: 12000, img: "https://i.imgur.com/f7kD3NI.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "PANEL" },
+      { id: 17, nama: "Script MD Vvip", harga: 40000, img: "https://i.imgur.com/xebbVOq.jpeg", deskripsi: "Script WhatsApp bot dengan fitur lengkap siap pakai.", kategori: "SCRIPT" },
+      { id: 18, nama: "Script MD Premium", harga: 20000, img: "https://i.imgur.com/xebbVOq.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "SCRIPT" },
+      { id: 19, nama: "Script MD Store/Pushkontak", harga: 20000, img: "https://i.imgur.com/xebbVOq.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "SCRIPT" },
+      { id: 20, nama: "Reseller Script MD Vvip", harga: 40000, img: "https://i.imgur.com/gBlryxE.jpeg", deskripsi: "Script WhatsApp bot dengan fitur lengkap siap pakai.", kategori: "RESELLER SC" },
+      { id: 21, nama: "Reseller Script MD Premium", harga: 20000, img: "https://i.imgur.com/gBlryxE.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "RESELLER SC" },
+      { id: 22, nama: "Reseller Script MD Store/Pushkontak", harga: 20000, img: "https://i.imgur.com/gBlryxE.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "RESELLER SC" },
+      { id: 23, nama: "Vps Ram 16GB Core 8", harga: 70000, img: "https://i.imgur.com/AYpuCUM.jpeg", deskripsi: "Script WhatsApp bot dengan fitur lengkap siap pakai.", kategori: "VPS" },
+      { id: 24, nama: "Vps Ram 8GB Core 4", harga: 50000, img: "https://i.imgur.com/AYpuCUM.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "VPS" },
+      { id: 25, nama: "Vps Ram 4GB Core 2", harga: 40000, img: "https://i.imgur.com/AYpuCUM.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "VPS" },
+      { id: 26, nama: "Vps Ram 2GB Core 1", harga: 25000, img: "https://i.imgur.com/AYpuCUM.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "VPS" },
+      { id: 27, nama: "Nokos 3x Verif", harga: 7000, img: "https://i.imgur.com/QyAdIgE.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "NOKOS" },
+      { id: 28, nama: "Nokos Unlimited Verif", harga: 10000, img: "https://i.imgur.com/QyAdIgE.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "NOKOS" },
+      { id: 29, nama: "My.id Domain", harga: 15000, img: "https://i.imgur.com/Xg6Yp3f.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "DOMAIN" },
+      { id: 30, nama: "Biz.id Domain", harga: 15000, img: "https://i.imgur.com/Xg6Yp3f.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "DOMAIN" },
+      { id: 31, nama: "Fix error Sc Bot", harga: 1000, img: "https://i.imgur.com/uXxLa3F.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "JASA FIX/ADD" },
+      { id: 32, nama: "Add Fitur Bot", harga: 1000, img: "https://i.imgur.com/uXxLa3F.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "JASA FIX/ADD" },
+      { id: 33, nama: "Call of Duty Mobile", harga: 1000, img: "https://i.imgur.com/FCk0qCE.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "DIAMOND GAME" },
+      { id: 34, nama: "Free Fire", harga: 1000, img: "https://i.imgur.com/6DLGieH.jpeg", deskripsi: "Script WhatsApp bot dengan fitur lengkap siap pakai.", kategori: "DIAMOND GAME" },
+      { id: 35, nama: "Free Fire Max", harga: 1000, img: "https://i.imgur.com/6DLGieH.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "DIAMOND GAME" },
+      { id: 36, nama: "Genshin impact", harga: 1000, img: "https://i.imgur.com/zDpFx2q.jpeg", deskripsi: "Panel WhatsApp bot premium dengan performa tinggi.", kategori: "DIAMOND GAME" },
+      { id: 37, nama: "Honor of Kings", harga: 1000, img: "https://i.imgur.com/dF7yjOU.jpeg", deskripsi: "Script WhatsApp bot dengan fitur lengkap siap pakai.", kategori: "DIAMOND GAME" },
+      { id: 38, nama: "Mobile Legends", harga: 1000, img: "https://i.imgur.com/z3k9fjk.jpeg", deskripsi: "Panel WhatsApp bot premium dengan performa tinggi.", kategori: "DIAMOND GAME" },
+      { id: 39, nama: "PUBG Mobile", harga: 1000, img: "https://i.imgur.com/3Z8gSps.jpeg", deskripsi: "Sewabot Untuk Grup", kategori: "DIAMOND GAME" },
+      { id: 40, nama: "Valorant", harga: 1000, img: "https://i.imgur.com/kpibXhf.jpeg", deskripsi: "Layanan sewa bot WhatsApp dengan fitur premium.", kategori: "DIAMOND GAME" }
+    ];
+    const kategoriUnik = ["SEWABOT", "JADIBOT", "PANEL", "SCRIPT", "RESELLER SC", "VPS", "NOKOS", "DOMAIN", "JASA FIX/ADD", "DIAMOND GAME"];
+
+    const produkList = document.getElementById("produk-list");
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const cartCount = document.getElementById("cart-count");
+    const cartItems = document.getElementById("cart-items");
+    const cartTotal = document.getElementById("cart-total");
+    const checkoutBtn = document.getElementById("checkout-btn");
+    kategoriUnik.forEach(k => {
+      const catProduk = produk.filter(p => p.kategori === k);
+      if (!catProduk.length) return;
+      const catTitle = document.createElement("h3");
+      catTitle.textContent = k;
+      catTitle.className = "text-2xl font-bold text-indigo-400 mt-8 mb-4";
+      produkList.appendChild(catTitle);
+      const grid = document.createElement("div");
+      grid.className = "grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4";
+      catProduk.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "bg-white/10 backdrop-blur-md shadow-lg rounded-lg overflow-hidden text-center p-2";
+        card.innerHTML = `
+          <a href="detail.html?id=${item.id}">
+            <img src="${item.img}" class="w-full h-28 object-cover rounded-md" alt="${item.nama}">
+          </a>
+          <div class="mt-2">
+            <a href="detail.html?id=${item.id}">
+              <h4 class="text-sm font-semibold text-indigo-300 truncate hover:underline">${item.nama}</h4>
+            </a>
+            <p class="text-gray-300 text-xs mb-2">Rp ${item.harga.toLocaleString()}</p>
+            <button onclick="addToCart(${item.id})" 
+              class="bg-purple-500 text-white text-xs px-2 py-1 rounded-lg shadow hover:bg-purple-600 w-full">
+              + Keranjang
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      produkList.appendChild(grid);
+    });
+
+    /* ===== Fungsi Keranjang ===== */
+    function addToCart(id) {
+      const item = produk.find(p => p.id === id);
+      const existing = cart.find(p => p.id === id);
+      if (existing) existing.qty++;
+      else cart.push({ ...item, qty: 1 });
+      saveCart();
+      updateCart();
+    }
+    function changeQty(id, delta) {
+      const item = cart.find(p => p.id === id);
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) cart = cart.filter(p => p.id !== id);
+      saveCart();
+      updateCart();
+    }
+    function updateCart() {
+      cartCount.textContent = cart.reduce((a,b)=>a+b.qty,0);
+      cartItems.innerHTML = "";
+      let total = 0;
+      cart.forEach((item,index)=>{
+        const subTotal = item.harga * item.qty;
+        total += subTotal;
+        const li = document.createElement("li");
+        li.className = "flex justify-between items-center bg-white/5 p-2 rounded text-sm";
+        li.innerHTML = `
+          <span>${item.nama}</span>
+          <div class="flex items-center space-x-2">
+            <button onclick="changeQty(${item.id}, -1)" class="bg-red-500 px-2 rounded">-</button>
+            <span>${item.qty}</span>
+            <button onclick="changeQty(${item.id}, 1)" class="bg-green-500 px-2 rounded">+</button>
+          </div>
+          <span>Rp ${subTotal.toLocaleString()}</span>
+        `;
+        cartItems.appendChild(li);
+      });
+      cartTotal.textContent = "Rp " + total.toLocaleString();
+    }
+    function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)); }
+    function toggleCart() { document.getElementById("cart-modal").classList.toggle("hidden"); }
+    document.getElementById("cart-btn").addEventListener("click", toggleCart);
+    updateCart();
+    feather.replace();
+
+    /* ===== Modal Pembayaran ===== */
+    const paymentModal = document.getElementById("payment-modal");
+    const qrisImgEl = document.getElementById("qris-img");
+    const danaDetail = document.getElementById("dana-detail");
+    const danaNumber = document.getElementById("dana-number");
+    const confirmBtnEl = document.getElementById("confirm-btn");
+    const paymentLinks = {
+      "DANA": "",
+      "QRIS": "https://i.imgur.com/a7UioF9.jpeg"
+    };
+    function togglePayment() { paymentModal.classList.toggle("hidden"); }
+    function selectPayment(method) {
+      if(method==="QRIS") { 
+        qrisImgEl.src = paymentLinks.QRIS;
+        qrisImgEl.classList.remove("hidden");
+        danaDetail.classList.add("hidden");
+      } else { 
+        qrisImgEl.classList.add("hidden");
+        danaDetail.classList.remove("hidden");
+      }
+      let pesan = `Harap sertakan ss bukti, pembayaran menggunakan ${method}:%0A`;
+      cart.forEach((item,index)=>{
+        const subTotal = item.harga * item.qty;
+        pesan += `%0A${index+1}. ${item.nama} x${item.qty} - Rp ${subTotal.toLocaleString()}`;
+      });
+      const total = cart.reduce((a,b)=>a+b.harga*b.qty,0);
+      pesan += `%0A%0ATotal: Rp ${total.toLocaleString()}`;
+      confirmBtnEl.href = `https://wa.me/6282334835814?text=${pesan}`;
+      document.getElementById("payment-detail").classList.remove("hidden");
+    }
+    function copyDanaNumber() {
+      navigator.clipboard.writeText(danaNumber.textContent)
+        .then(()=>alert("Nomor DANA berhasil disalin!"))
+        .catch(()=>alert("Gagal menyalin nomor DANA."));
+    }
+    checkoutBtn.addEventListener("click",(e)=>{
+      e.preventDefault();
+      togglePayment();
+    });
+  </script>
+</body>
+</html>
